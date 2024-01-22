@@ -1,0 +1,8 @@
+■ChatGPT
+https://chat.openai.com/auth/login
+
+■プロンプトテクニック
+https://weel.co.jp/media/chatgpt-prompt-design
+
+■ゴールシークプロンプトを簡単に解説
+https://botamochiii.hatenablog.com/entry/2023/11/07/155815
