@@ -3,13 +3,19 @@ from tkinter import messagebox
 import sqlite3
 from datetime import datetime
 
+conn = None
+cursor = None
 
-# SQLiteデータベースに接続
-with sqlite3.connect('todo.db') as conn:
-
-    # カーソルを取得
+def connect_database():
+    global conn, cursor
+    conn = sqlite3.connect('todo.db')
     cursor = conn.cursor()
 
+def close_database():
+    global conn
+    conn.close()
+
+def create_todo_table(cursor):
     # ToDoテーブルを作成
     cursor.execute('''
         CREATE TABLE IF NOT EXISTS todos (
@@ -22,11 +28,6 @@ with sqlite3.connect('todo.db') as conn:
         )
     ''')
 
-    # データベースに変更を保存
-    conn.commit()
-# withステートメントを抜ける時点で、データベース接続は自動的にクローズされる。
-
-
 def submit_form():
     try:
         task = entry_task.get()
@@ -35,20 +36,26 @@ def submit_form():
         endtime = entry_end_time.get()
 
         # フォーマットが正しいか確認
-        detatime.strptime(duedate, '%Y-%m-%d')
-        datetime.strptime(duetime, '%H:%M')
-        datetime.strptime(endtime, '%H:%M')
+        datetime.strptime(duedate, '%Y-%m-%d')
+        if duetime.strip():
+            datetime.strptime(duetime, '%H:%M')
+        if endtime.strip():
+            datetime.strptime(endtime, '%H:%M')
 
         # ToDoをデータベースに追加
+        connect_database()
         add_todo(task, duedate, duetime, endtime)
+        close_database()
 
         messagebox.showinfo("フォームの内容", f"タスク: {task}, 日付: {duedate} が送信されました。")
 
         # フォーム送信後にデータを再取得して表示
+        connect_database()
         display_todos()
+        close_database()
 
-    except ValueError:
-        messagebox.showerror("エラー", "日付または時間の形式が正しくありません。")
+    except ValueError as e:
+        messagebox.showerror("エラー", f"日付または時間の形式が正しくありません。詳細: {str(e)}")
 
 def add_todo(task, due_date=None, due_time=None, end_time=None):
     # 日付と時間を文字列からdatetimeオブジェクトに変換
@@ -61,10 +68,112 @@ def add_todo(task, due_date=None, due_time=None, end_time=None):
      (task, False, due_date, due_time, end_time))
     conn.commit()
 
+def delete_selected_item():
+    global conn, cursor
+
+    selected_index = listbox.curselection()
+
+    if selected_index:
+        # 選択されたアイテムのインデックスを取得
+        selected_index = selected_index[0]
+
+        # 選択されたアイテムを取得
+        selected_item = listbox.get(selected_index)
+        
+        # |で分割して、各要素を取得
+        parts = [part.strip() for part in selected_item.split('|')]
+        print(parts)
+
+        # "タスク: "の部分を取得して削除
+        task_info = parts[0].split(': ')[-1]
+        due_date_info = parts[1].split(': ')[-1]
+        due_time_info = parts[2].split(': ')[-1]
+        end_time_info = parts[3].split(': ')[-1]
+
+        # データベースから対応する要素を削除
+        connect_database()
+        cursor.execute("DELETE FROM todos WHERE task = ? AND due_date LIKE ? AND due_time LIKE ? AND end_time LIKE ?",
+        (task_info, f'%{due_date_info}%', f'%{due_time_info}%', f'%{end_time_info}%'))
+        # データベース変更をコミット
+        conn.commit()
+        close_database()
+
+        # 選択されたアイテムを削除
+        listbox.delete(selected_index)
+
+        # 新しい値でアイテムを挿入
+        new_value = "削除"
+        listbox.insert(selected_index, new_value)
+
+        # # フォーム送信後にデータを再取得して表示
+        # connect_database()
+        # display_todos()
+        # close_database()
+
+def update_selected_item():
+    global conn, cursor
+
+    try:
+        task = entry_task.get()
+        duedate = entry_due_date.get()
+        duetime = entry_due_time.get()
+        endtime = entry_end_time.get()
+
+        # フォーマットが正しいか確認
+        datetime.strptime(duedate, '%Y-%m-%d')
+        if duetime.strip():
+            datetime.strptime(duetime, '%H:%M')
+        if endtime.strip():
+            datetime.strptime(endtime, '%H:%M')
+
+
+
+        selected_index = listbox.curselection()
+
+        if selected_index:
+            # 選択されたアイテムのインデックスを取得
+            selected_index = selected_index[0]
+
+            # 選択されたアイテムを取得
+            selected_item = listbox.get(selected_index)
+            
+            # |で分割して、各要素を取得
+            parts = [part.strip() for part in selected_item.split('|')]
+
+            # "タスク: "の部分を取得して削除
+            task_info = parts[0].split(': ')[-1]
+            due_date_info = parts[1].split(': ')[-1]
+            due_time_info = parts[2].split(': ')[-1]
+            end_time_info = parts[3].split(': ')[-1]
+
+            # データベースから対応する要素を削除
+            connect_database()
+            cursor.execute("UPDATE todos SET task=?, due_date=?, due_time=?, end_time=? WHERE task=? and due_date LIKE ? and due_time LIKE ? and end_time LIKE ?",
+            (task, duedate, duetime, endtime, task_info, f'%{due_date_info}%', f'%{due_time_info}%', f'%{end_time_info}%'))
+            # データベース変更をコミット
+            conn.commit()
+            close_database()
+
+            # 選択されたアイテムを削除
+            listbox.delete(selected_index)
+
+            # 新しい値でアイテムを挿入
+            new_value = f"タスク: {task:<20} | 日付: {duedate:<15} | 開始時間: {duetime:<10} | 終了時間: {endtime:<10}"
+            listbox.insert(selected_index, new_value)
+    
+    except ValueError as e:
+        messagebox.showerror("エラー", f"日付または時間の形式が正しくありません。詳細: {str(e)}")
+
 def display_todos():
     # 日付と時間でソートしてToDoリストを取得
     cursor.execute("SELECT task, strftime('%Y-%m-%d', due_date), strftime('%H:%M', due_time), strftime('%H:%M', end_time) FROM todos ORDER BY due_date, due_time")
     todos = cursor.fetchall()
+
+    # エントリーをクリア
+    entry_task.delete(0, tk.END)
+    entry_due_date.delete(0, tk.END)
+    entry_due_time.delete(0, tk.END)
+    entry_end_time.delete(0, tk.END)
 
     # リストボックスをクリア
     listbox.delete(0, tk.END)
@@ -115,8 +224,18 @@ submit_button.pack(pady=10, padx=10)
 listbox = tk.Listbox(root, width=80)    # 幅を50に設定
 listbox.pack(pady=10, padx=10)
 
+# 削除ボタンの作成
+delete_button = tk.Button(root, text="選択したアイテムを削除", command=delete_selected_item)
+delete_button.pack(pady=10)
+
+# 変更ボタンの作成
+update_button = tk.Button(root, text="選択したアイテムを変更", command=update_selected_item)
+update_button.pack(pady=10)
+
 # フォーム起動時にデータを表示
+connect_database()
 display_todos()
+close_database()
 
 # Tkinterメインループ
 root.mainloop()
