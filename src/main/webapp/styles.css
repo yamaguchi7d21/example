@@ -1,0 +1,61 @@
+@charset "UTF-8";
+
+* {
+	margin: 0;
+	padding: 0;
+}
+
+body {
+	width: 80%;
+	height: 100vh;
+	margin: auto;
+}
+
+section {
+	margin-top: 20px;
+}
+
+h1 {
+	color: blue;
+}
+
+table {
+	border-collapse: collapse;
+	width: 100%;
+}
+
+th, td {
+	border: 1px solid black;
+	padding: 8px;
+	text-align: center;
+}
+
+button {
+	display: inline-flex;
+	justify-content:center;
+	align-items: center;
+	margin: 10px;
+	height: 25px;
+	min-width: 75px;
+	cursor: pointer;
+	padding: 3px;
+}
+button span {
+	margin: 3px;
+}
+
+input, select {
+	height: 25px;
+}
+
+input {
+	text-indent: 0.5em;
+}
+
+#btn {
+	display: inline-flex;
+	justify-content: center;
+	align-items: center;
+	width: 50px;
+	text-indent: 0;
+}
