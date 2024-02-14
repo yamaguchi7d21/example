@@ -1,0 +1,6 @@
+python 3.11.4
+sqlite3 3.41.2
+Java 17.0.2
+postgresql 11.2
+HTML5
+CSS3
