@@ -148,7 +148,7 @@ def update_selected_item():
 
             # データベースから対応する要素を削除
             connect_database()
-            cursor.execute("UPDATE todos SET task=?, due_date=?, due_time=?, end_time=? WHERE task=? and due_date LIKE ? and due_time LIKE ? and end_time LIKE ?",
+            cursor.execute("UPDATE todos SET task=?, due_date=?, due_time=?, end_time=? WHERE task=? AND due_date LIKE ? AND due_time LIKE ? AND end_time LIKE ?",
             (task, duedate, duetime, endtime, task_info, f'%{due_date_info}%', f'%{due_time_info}%', f'%{end_time_info}%'))
             # データベース変更をコミット
             conn.commit()
